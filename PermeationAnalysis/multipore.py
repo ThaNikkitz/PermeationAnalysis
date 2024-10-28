@@ -1,68 +1,46 @@
 import pdb
+from . import Pore
 import prody
 import .msd_pf
 import .permeation_events
 import .axial_loads
 import .survival_time
 
+import warnings # For checkpoints position check (lower > upper)
+
 from datetime import datetime
 
-class Multipore:
+class Multipore(Pore):
 
     def __init__(self, 
                  dcd=None, 
                  pdb=None, 
-                 psf=None, 
                  sel='name OH2', 
-                 ref='protein and name CA', 
-                 upper_check=None, 
+                 ref='protein and name CA',
+                 upper_check=None,
                  lower_check=None, 
-                 check_radii=None, 
-                 delta=3):
-        
-        self._dcd = dcd
-        self._pdb = pdb
-        self._psf = psf
-        self._sel = sel
-        self._ref = ref
-        self._upper_check = upper_check
-        self._lower_check = lower_check
-        self._check_radii = check_radii
-        self._delta = delta
+                 radius=5, 
+                 delta=3
+                 ):
+        super().__init__(dcd, pdb, sel, ref)
+        # TODO: Implement a way to analyze multiple pores at once
+        self.upper_check = upper_check
+        self.lower_check = lower_check
+        self.check_radii = radius
+        self.delta = delta
 
     @property
-    def dcd(self):
-        return self._dcd
-
-    @dcd.setter
-    def dcd(self, dcd):
-        #TODO: modify so it takes prody trajectory files as input as well
-        if isinstance(dcd, list):
-            if all([type(element) == str for element in dcd]):
-                self._dcd += dcd
-            else:
-                raise TypeError('The elements of the list must all be strings, i.e. paths to the .dcd files.')
-        elif isinstance(dcd, str):
-            self._dcd.append(dcd)
-
-        elif isinstance(dcd, (prody.DCDFile, prody.Trajectory)):
-            pass
-
-        else:
-            raise TypeError('Must be a string pointing to the .dcd file.')
-        
-    @property
-    def pdb(self):
-        return self._pdb
+    def upper_check(self):
+        return self._upper_check
     
-    @pdb.setter
-    def pdb(self, pdb):
-        if isinstance(pdb, (prody.AtomGroup, prody.Ensemble, prody.Atomic)):
-            self._pdb = pdb
-        elif isinstance(pdb, str):
-            self._pdb = prody.parsePDB
+    @upper_check.setter
+    def upper_check(self, upper_check):
+        if isinstance(upper_check, (float, int, str)):
+            self._upper_check = upper_check
         else:
-            raise TypeError('The input argument is neither a compatible ProDy pdb, nor a path to one such file')
+            raise TypeError('The upper and lower checkpoints have to be either\
+                             a Z position or an atomic selection')
+        
 
     @property
     def upper_check(self):
